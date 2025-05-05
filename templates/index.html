@@ -1,0 +1,100 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Security Request Portal</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .form-group { margin: 10px 0; }
+        .request-list { margin-top: 20px; }
+        .request-item { border: 1px solid #ddd; padding: 10px; margin: 10px 0; }
+        .status-pending { color: orange; }
+        .status-in-progress { color: blue; }
+        .status-completed { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Security Request Portal</h1>
+    
+    <div class="request-form">
+        <h2>Submit New Request</h2>
+        <div class="form-group">
+            <label>Request Type:</label>
+            <select id="requestType">
+                <option value="VAPT">VAPT</option>
+                <option value="Design Review">Design Review</option>
+                <option value="Security Guidelines">Security Guidelines</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Description:</label>
+            <textarea id="description" rows="4" cols="50"></textarea>
+        </div>
+        <div class="form-group">
+            <label>Requester Name:</label>
+            <input type="text" id="requester" />
+        </div>
+        <button onclick="submitRequest()">Submit Request</button>
+    </div>
+
+    <div class="request-list">
+        <h2>Request Dashboard</h2>
+        <div id="requests"></div>
+    </div>
+
+    <script>
+        function submitRequest() {
+            const data = {
+                type: document.getElementById('requestType').value,
+                description: document.getElementById('description').value,
+                requester: document.getElementById('requester').value
+            };
+
+            fetch('/api/requests', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(() => {
+                loadRequests();
+                document.getElementById('description').value = '';
+                document.getElementById('requester').value = '';
+            });
+        }
+
+        function updateStatus(id, status) {
+            fetch(`/api/requests/${id}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({status})
+            })
+            .then(() => loadRequests());
+        }
+
+        function loadRequests() {
+            fetch('/api/requests')
+                .then(response => response.json())
+                .then(requests => {
+                    const container = document.getElementById('requests');
+                    container.innerHTML = requests.map(req => `
+                        <div class="request-item">
+                            <h3>${req.type}</h3>
+                            <p><strong>Requester:</strong> ${req.requester}</p>
+                            <p><strong>Description:</strong> ${req.description}</p>
+                            <p><strong>Status:</strong> <span class="status-${req.status.toLowerCase()}">${req.status}</span></p>
+                            <select onchange="updateStatus(${req.id}, this.value)">
+                                <option value="Pending" ${req.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                                <option value="In Progress" ${req.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                                <option value="Completed" ${req.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                            </select>
+                        </div>
+                    `).join('');
+                });
+        }
+
+        loadRequests();
+        setInterval(loadRequests, 30000);
+    </script>
+</body>
+</html>
