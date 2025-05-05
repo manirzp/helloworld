@@ -3,43 +3,139 @@
 <html>
 <head>
     <title>Security Request Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .form-group { margin: 10px 0; }
-        .request-list { margin-top: 20px; }
-        .request-item { border: 1px solid #ddd; padding: 10px; margin: 10px 0; }
-        .status-pending { color: orange; }
-        .status-in-progress { color: blue; }
-        .status-completed { color: green; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: #f5f7fa;
+            color: #2d3748;
+            line-height: 1.6;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 2.5rem;
+            color: #1a202c;
+            margin-bottom: 2rem;
+            font-weight: 600;
+        }
+        h2 {
+            font-size: 1.5rem;
+            color: #2d3748;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #4a5568;
+        }
+        select, input, textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        select:focus, input:focus, textarea:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66,153,225,0.1);
+        }
+        button {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #3182ce;
+        }
+        .request-item {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .request-item:hover {
+            transform: translateY(-2px);
+        }
+        .request-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .status-pending { color: #ed8936; }
+        .status-in-progress { color: #4299e1; }
+        .status-completed { color: #48bb78; }
+        select.status-select {
+            width: auto;
+            padding: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        .badge-pending { background: #feebc8; color: #c05621; }
+        .badge-in-progress { background: #bee3f8; color: #2b6cb0; }
+        .badge-completed { background: #c6f6d5; color: #2f855a; }
     </style>
 </head>
 <body>
-    <h1>Security Request Portal</h1>
-    
-    <div class="request-form">
-        <h2>Submit New Request</h2>
-        <div class="form-group">
-            <label>Request Type:</label>
-            <select id="requestType">
-                <option value="VAPT">VAPT</option>
-                <option value="Design Review">Design Review</option>
-                <option value="Security Guidelines">Security Guidelines</option>
-            </select>
+    <div class="container">
+        <h1>Security Request Portal</h1>
+        
+        <div class="card">
+            <h2>Submit New Request</h2>
+            <div class="form-group">
+                <label>Request Type</label>
+                <select id="requestType">
+                    <option value="VAPT">VAPT</option>
+                    <option value="Design Review">Design Review</option>
+                    <option value="Security Guidelines">Security Guidelines</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <textarea id="description" rows="4" placeholder="Describe your security request..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Requester Name</label>
+                <input type="text" id="requester" placeholder="Your name"/>
+            </div>
+            <button onclick="submitRequest()">Submit Request</button>
         </div>
-        <div class="form-group">
-            <label>Description:</label>
-            <textarea id="description" rows="4" cols="50"></textarea>
-        </div>
-        <div class="form-group">
-            <label>Requester Name:</label>
-            <input type="text" id="requester" />
-        </div>
-        <button onclick="submitRequest()">Submit Request</button>
-    </div>
 
-    <div class="request-list">
-        <h2>Request Dashboard</h2>
-        <div id="requests"></div>
+        <div class="card">
+            <h2>Request Dashboard</h2>
+            <div id="requests"></div>
+        </div>
     </div>
 
     <script>
@@ -63,6 +159,10 @@
             });
         }
 
+        function getStatusBadgeClass(status) {
+            return `badge badge-${status.toLowerCase().replace(' ', '-')}`;
+        }
+
         function updateStatus(id, status) {
             fetch(`/api/requests/${id}`, {
                 method: 'PUT',
@@ -79,11 +179,13 @@
                     const container = document.getElementById('requests');
                     container.innerHTML = requests.map(req => `
                         <div class="request-item">
-                            <h3>${req.type}</h3>
+                            <div class="request-header">
+                                <h3>${req.type}</h3>
+                                <span class="${getStatusBadgeClass(req.status)}">${req.status}</span>
+                            </div>
                             <p><strong>Requester:</strong> ${req.requester}</p>
                             <p><strong>Description:</strong> ${req.description}</p>
-                            <p><strong>Status:</strong> <span class="status-${req.status.toLowerCase()}">${req.status}</span></p>
-                            <select onchange="updateStatus(${req.id}, this.value)">
+                            <select class="status-select" onchange="updateStatus(${req.id}, this.value)">
                                 <option value="Pending" ${req.status === 'Pending' ? 'selected' : ''}>Pending</option>
                                 <option value="In Progress" ${req.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
                                 <option value="Completed" ${req.status === 'Completed' ? 'selected' : ''}>Completed</option>
